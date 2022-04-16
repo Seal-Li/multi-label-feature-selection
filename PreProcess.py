@@ -40,8 +40,7 @@ class PreProcess():
         """
         n, m = Y.shape
         lab_num = np.sum(Y)
-        num = lab_num/n
-        return num
+        return lab_num/n
 
     def PMC(self, Y):
         """
@@ -51,8 +50,7 @@ class PreProcess():
         v = np.sum(Y, axis=1)
         m = np.sum(v==1)
         num = n - m
-        ratio = num/n
-        return ratio
+        return num/n
     
     def MissingTreatment(self, X, Y):
         n = X.shape[0]

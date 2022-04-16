@@ -11,8 +11,7 @@ def Laplacian(A):
     P = np.zeros_like(A)
     for i in range(n):
         P[i,i] = np.sum(A[i,:])
-    L = P - A
-    return L
+    return P - A
 
 
 def Solve(X, Y, L, D, H, alpha, beta):
@@ -47,8 +46,7 @@ def Obj(X, Y, W, b, L, D, alpha, beta):
     item4 = np.trace(W.T @ X.T @ En @ b.T)
     item5 = np.trace(Y.T @ En @ b.T)
     item6 = np.trace(b @ En.T @ En @ b.T)/2
-    obj = item1 - item2 + item3 + item4 - item5 + item6
-    return obj
+    return item1 - item2 + item3 + item4 - item5 + item6
 
 
 def FeatureSelection(W, n_fea):
@@ -62,8 +60,7 @@ def Predict(X, W, b, index):
     n = X.shape[0]
     En = np.ones((n,1))
     X = X[:,index]
-    y_pre = X @ W + En @ b.T
-    return y_pre
+    return X @ W + En @ b.T
 
 
 def Evaluate(truth, pred):
@@ -72,8 +69,7 @@ def Evaluate(truth, pred):
     oe = Metrics(truth, pred).one_error()
     cov = Metrics(truth, pred).coverage()
     ap = Metrics(truth, pred).average_precision()
-    loss = [hl, rl, oe, cov, ap]
-    return loss
+    return [hl, rl, oe, cov, ap]
 
 
 def Iteration(X, Y, L, D, H, alpha, beta):
@@ -96,39 +92,41 @@ def main(x_train, y_train, x_test, y_test, L, n_fea, alpha, beta):
     loss = Evaluate(y_test, Y_pre)
     return loss, obj
 
+import itertools
 if __name__ == '__main__':
     #### 变量区 ####
     data_names = ["Birds", "Business","Emotions","Health","Mediamill","Scene","Yeast"]
     p = [260, 300,72,300,120,294,103]
-    
+
     k = 6
     data_name = data_names[k]
     p = p[k]
-    
+
     n_fea = p
     n_feas = [55,60,65,70,75,80,85,90,95,100]
     alphas = np.array([1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 1e2])
     betas = np.array([1e-3, 1e-2, 1e-1, 1, 1e1, 1e2, 1e3, 1e4, 1e5])
-    
+
     #### 读取数据文件 ####
-    train_path = r"C:\Users\dell\Desktop\datasets\{}\{}-train.csv".format(data_name, data_name)
-    test_path = r"C:\Users\dell\Desktop\datasets\{}\{}-test.csv".format(data_name, data_name)
+    train_path = f"C:\\Users\\dell\\Desktop\\datasets\\{data_name}\\{data_name}-train.csv"
+
+    test_path = f"C:\\Users\\dell\\Desktop\\datasets\\{data_name}\\{data_name}-test.csv"
+
     data_train = np.genfromtxt(train_path, delimiter=",", skip_header=1)
     data_test = np.genfromtxt(test_path, delimiter=",", skip_header=1)
     x_train, y_train = PreProcess().MissingTreatment(data_train[:,:p], data_train[:,p:])
     x_test, y_test = PreProcess().MissingTreatment(data_test[:,:p], data_test[:,p:])
-    
+
     A = AffinityMetrics(x_train.T).Boolean()
     L = Laplacian(A)
     s = len(n_feas)
     best_values = np.zeros((5,s))
     for k in range(s):
         Loss = np.zeros((len(alphas), len(betas), 5))
-        for i in range(len(alphas)):
-            for j in range(len(betas)):
-                Loss[i,j,:], obj = main(x_train, y_train, x_test, y_test, L,
-                                        n_feas[k], alphas[i], betas[j])
-        
+        for i, j in itertools.product(range(len(alphas)), range(len(betas))):
+            Loss[i,j,:], obj = main(x_train, y_train, x_test, y_test, L,
+                                    n_feas[k], alphas[i], betas[j])
+
         # best_values = np.zeros((5,))
         for i in range(4):
             best_values[i,k] = np.min(Loss[:,:,i])

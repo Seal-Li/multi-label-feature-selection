@@ -83,10 +83,7 @@ class ML_KNN(object):
                 y1 = self.Ph1[j]*self.Peh1[j][temp]
                 y0 = self.Ph0[j]*self.Peh0[j][temp]
                 self.rtl[i][j] = self.Ph1[j]*self.Peh1[j][temp]/(self.Ph1[j]*self.Peh1[j][temp] + self.Ph0[j]*self.Peh0[j][temp])
-                if y1 > y0:
-                    self.predict_labels[i][j] = 1 
-                else:
-                    self.predict_labels[i][j] = 0
+                self.predict_labels[i][j] = 1 if y1 > y0 else 0
         #print(self.predict_labels)
         return self.predict_labels
                     
@@ -110,14 +107,16 @@ class ML_KNN(object):
 if __name__ == "__main__":
     data_names = ["Birds", "Business","Emotions","Health","Mediamill","Scene","Yeast"]
     p = [260, 300,72,300,120,294,103]
-    
+
     k = 6
     data_name = data_names[k]
     p = p[k]
-    
+
     #### 读取数据文件 ####
-    train_path = r"C:\Users\dell\Desktop\datasets\{}\{}-train.csv".format(data_name, data_name)
-    test_path = r"C:\Users\dell\Desktop\datasets\{}\{}-test.csv".format(data_name, data_name)
+    train_path = f"C:\\Users\\dell\\Desktop\\datasets\\{data_name}\\{data_name}-train.csv"
+
+    test_path = f"C:\\Users\\dell\\Desktop\\datasets\\{data_name}\\{data_name}-test.csv"
+
     data_train = np.genfromtxt(train_path, delimiter=",", skip_header=1)
     data_test = np.genfromtxt(test_path, delimiter=",", skip_header=1)
     x_train, y_train = PreProcess().MissingTreatment(data_train[:,:p], data_train[:,p:])

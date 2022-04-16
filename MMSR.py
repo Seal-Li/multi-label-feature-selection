@@ -12,17 +12,16 @@ def RandomWalk(A, step=100):
     for i in range(n):
         if (A[i,:]==0).all():
             A[i,:] = np.random.uniform(0, 1, (1,n))
-    
+
     for i in range(n):
         prob = (A[i,:]/np.sum(A[i,:])).reshape(n,)
-        for j in range(step):
+        for _ in range(step):
             index = np.random.choice(nodes, 1, p=prob)
             C[i,index] = C[i,index] + 1
             A_ind = A[index,:]
             A_ind[0,index] = 0
             prob = (A_ind/np.sum(A_ind)).reshape(n,)
-    S = (C + C.T)/2
-    return S
+    return (C + C.T)/2
 
 def Laplacian(A):
     n = A.shape[0]
@@ -30,8 +29,7 @@ def Laplacian(A):
     P = np.zeros_like(A)
     for i in range(n):
         P[i,i] = np.sum(A[i,:])
-    L = P - A
-    return L
+    return P - A
 
 def Solve(X, Y, L, D, V, H, alpha, beta, gamma):
     n, p = X.shape
@@ -63,8 +61,7 @@ def Obj(X, Y, W, b, V, H, L, D, alpha, beta, gamma):
     item7 = np.trace(W.T @ X.T @ L @ X @ W)
     item8 = np.trace(W.T @ W)
     item9 = np.trace(W.T @ D @ W)
-    obj = item1/2 + item2 - item3/2 + item4/2 - item5 + item6/2 + alpha*item7/2 + beta*item8/2 + gamma*item9/2
-    return obj
+    return item1 / 2 + item2 - item3 / 2 + item4 / 2 - item5 + item6 / 2 + alpha * item7 / 2 + beta * item8 / 2 + gamma * item9 / 2
 
 def FeatureSelection(W, n_fea):
     weights = np.sqrt(np.sum(W**2, axis=1))
@@ -76,8 +73,7 @@ def Predict(X, W, b, index):
     n = X.shape[0]
     En = np.ones((n,1))
     X = X[:,index]
-    y_pre = X @ W + En @ b
-    return y_pre
+    return X @ W + En @ b
 
 def Evaluate(truth, pred):
     hl = Metrics(truth, pred).hamming_loss()
@@ -85,8 +81,7 @@ def Evaluate(truth, pred):
     oe = Metrics(truth, pred).one_error()
     cov = Metrics(truth, pred).coverage()
     ap = Metrics(truth, pred).average_precision()
-    loss = [hl, rl, oe, cov, ap]
-    return loss
+    return [hl, rl, oe, cov, ap]
 
 def Iteration(X, Y, L, D, V, H, alpha, beta, gamma):
     it = 30
@@ -108,6 +103,7 @@ def main(x_train, y_train, x_test, y_test, V, L, n_fea, alpha, beta, gamma):
     loss = Evaluate(y_test, Y_pre)
     return loss, obj, V, Y_pre
 
+import itertools
 if __name__ == '__main__':
     #### 变量区 ####
     data_names = ["Business","Emotions","Health","Mediamill","Scene","Yeast"]
@@ -117,7 +113,7 @@ if __name__ == '__main__':
     data_name = data_names[k]
     p = p[k]
     n_fea = 80
-    
+
     alphas = np.array([1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1])
     # alphas = np.logspace(-6, -2, 20)
     # betas = np.linspace(0, 1, s)
@@ -128,14 +124,16 @@ if __name__ == '__main__':
     # gammas = np.logspace(0, 2, 10)
     # gammas = np.arange(2,8,0.5)
     #### 读取数据文件 ####
-    train_path = r"C:\Users\dell\Desktop\datasets\{}\{}-train.csv".format(data_name, data_name)
-    test_path = r"C:\Users\dell\Desktop\datasets\{}\{}-test.csv".format(data_name, data_name)
+    train_path = f"C:\\Users\\dell\\Desktop\\datasets\\{data_name}\\{data_name}-train.csv"
+
+    test_path = f"C:\\Users\\dell\\Desktop\\datasets\\{data_name}\\{data_name}-test.csv"
+
     data_train = np.genfromtxt(train_path, delimiter=",", skip_header=1)
     data_test = np.genfromtxt(test_path, delimiter=",", skip_header=1)
     x_train, y_train = PreProcess().MissingTreatment(data_train[:,:p], data_train[:,p:])
     x_test, y_test = PreProcess().MissingTreatment(data_test[:,:p], data_test[:,p:])
     m = y_train.shape[1]
-    
+
     n, p = x_train.shape
     V = np.eye(n)
 
@@ -145,13 +143,11 @@ if __name__ == '__main__':
     L = Laplacian(A)
     best_values = np.zeros((5,))
     Loss = np.zeros((len(alphas), len(gammas), 5))
-    for i in range(len(alphas)):
-        for j in range(len(gammas)):
-            Loss[i,j,:], obj, V, Y_pre = main(x_train, y_train, x_test, y_test,
-                                              V, L, n_fea, alphas[i],
-                                              beta*gammas[j],
-                                              (1-beta)*gammas[j])
-        # best_values = np.zeros((5,s))
+    for i, j in itertools.product(range(len(alphas)), range(len(gammas))):
+        Loss[i,j,:], obj, V, Y_pre = main(x_train, y_train, x_test, y_test,
+                                          V, L, n_fea, alphas[i],
+                                          beta*gammas[j],
+                                          (1-beta)*gammas[j])
     for i in range(4):
         best_values[i] = np.min(Loss[:,:,i])
     best_values[4] = np.max(Loss[:,:,4])
