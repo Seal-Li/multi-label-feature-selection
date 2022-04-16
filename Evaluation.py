@@ -35,8 +35,7 @@ class Metrics():
     
     def hamming_loss(self, threshold=0.5):
         self.pred = (self.pred>=threshold).astype("int32")
-        Hamming_Loss = np.sum(self.pred!=self.real)/(self.n*self.p)
-        return Hamming_Loss
+        return np.sum(self.pred!=self.real)/(self.n*self.p)
     
     def ranking_loss(self):
         Ranking_Loss = 0
@@ -89,8 +88,7 @@ class Metrics():
                 tmp2 = len(score_all) - tmp2
                 precision_tmp += tmp1 / tmp2
             precision += precision_tmp / len(score)
-        Average_Precision = precision / self.n
-        return Average_Precision
+        return precision / self.n
     
     def jaccard_index(self):
         JaccardIndex = 0
@@ -121,8 +119,7 @@ class Metrics():
         Precise_Matching = 0
         pred_label = (self.pred>=0.5)
         for i in range(self.n):
-            flag = (self.real[i,:]==pred_label[i,:]).all()
-            if flag:
-                Precise_Matching = Precise_Matching + 1/self.n            
+            if flag := (self.real[i, :] == pred_label[i, :]).all():
+                Precise_Matching = Precise_Matching + 1/self.n
         return Precise_Matching
     
