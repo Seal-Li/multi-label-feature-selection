@@ -39,9 +39,3 @@ def CRFS(X, Y, alpha):
         U = temp @ X.T @ P @ Y
         obj[i] = Obj(X, Y, U, P, Q, alpha)
     return U, obj
-        
-def FeatureSelection(W, n_fea):
-    weights = np.sqrt(np.sum(W**2, axis=1))
-    indexes = np.argsort(weights)[-n_fea:]
-    W = W[indexes,:]
-    return W, indexes

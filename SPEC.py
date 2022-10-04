@@ -5,7 +5,6 @@ import numpy as np
 from scipy.sparse import *
 from sklearn.metrics.pairwise import rbf_kernel
 from numpy import linalg as LA
-from PreProcess import PreProcess
 from Evaluation import Metrics
 
 def spec(X, **kwargs):

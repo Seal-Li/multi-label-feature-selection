@@ -9,7 +9,6 @@ import numpy as np
 import scipy.io as sio
 import evaluate as ev
 #import sampleProcess as sp
-from sklearn.model_selection import KFold
 from knn import *
  
     
@@ -86,7 +85,7 @@ class ML_KNN(object):
                 self.predict_labels[i][j] = 1 if y1 > y0 else 0
         #print(self.predict_labels)
         return self.predict_labels
-                    
+
                 
     def evaluate(self, _test_target):#the function must be invoked after the predict function has been invoked
         print("Hamming loss:")
@@ -103,26 +102,3 @@ class ML_KNN(object):
         #print(ev.SubsetAccuracy(self.predict_labels, _test_target))
         #print("AUC:")
         #print(ev.MacroAveragingAUC(self.rtl, _test_target))
-
-if __name__ == "__main__":
-    data_names = ["Birds", "Business","Emotions","Health","Mediamill","Scene","Yeast"]
-    p = [260, 300,72,300,120,294,103]
-
-    k = 6
-    data_name = data_names[k]
-    p = p[k]
-
-    #### 读取数据文件 ####
-    train_path = f"C:\\Users\\dell\\Desktop\\datasets\\{data_name}\\{data_name}-train.csv"
-
-    test_path = f"C:\\Users\\dell\\Desktop\\datasets\\{data_name}\\{data_name}-test.csv"
-
-    data_train = np.genfromtxt(train_path, delimiter=",", skip_header=1)
-    data_test = np.genfromtxt(test_path, delimiter=",", skip_header=1)
-    x_train, y_train = PreProcess().MissingTreatment(data_train[:,:p], data_train[:,p:])
-    x_test, y_test = PreProcess().MissingTreatment(data_test[:,:p], data_test[:,p:])
-
-    mlKnn = ML_KNN(x_train, y_train, 11)
-    mlKnn.fit()
-    labels1 = mlKnn.predict(x_test)
-    mlKnn.evaluate(y_test)
