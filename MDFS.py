@@ -1,51 +1,44 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from scipy import linalg
 
 
-def Laplacian(A):
-    n = A.shape[0]
-    A = (A + A.T)/2
-    P = np.zeros_like(A)
-    for i in range(n):
-        P[i,i] = np.sum(A[i,:])
-    return P - A
+class MDFS(object):
+    def __init__(self, x, y, L, L0, max_iter=50, eps=1e-64):
+        self.x = x
+        self.y = y
+        self.L = L
+        self.L0 = L0
+        self.n = x.shape[0]
+        self.p = x.shape[1]
+        self.m = y.shape[1]
+        self.H = np.eye(self.n) - np.ones((self.n, 1)) @ np.ones((1, self.n)) / self.n
+        self.max_iter = max_iter
+        self.eps = eps
+    
+    def update(self, W):
+        D = np.eye(self.p)
+        for i in range(self.p):
+            denominator = np.sqrt(np.sum(W[i, :] ** 2))
+            D[i,i] = 1 / (2 * denominator + self.eps)
+        return D
 
+    def mdfs(self, alpha, beta, gamma):
+        np.random.seed(20221028)
+        W = np.random.normal(0, 1, (self.p, self.m))
+        A = (self.L + self.H + alpha * np.eye(self.n))
+        D = beta * self.L0
+        for _ in range(self.max_iter):
+            E = self.H @ self.x @ W + alpha * self.y
+            F = linalg.solve_sylvester(A, D, E)
+            Q = self.update(W)
+            W = np.linalg.inv(self.x.T @ self.H @ self.x + gamma * Q) @ self.x.T @ self.H @ F
+            b = (np.ones((1, self.n)) @ F - np.ones((1, self.n)) @ self.x @ W) / self.n
+        return W, b
 
-def Obj(X, Y, W, H, L, L0, F, Q, alpha, beta, gamma):
-    item1 = np.trace(F.T @ L @ F)
-    item2 = np.sum((H @ X @ W - H @ F)**2)
-    item3 = alpha*np.sum((F-Y)**2)
-    item4 = beta*np.trace(F @ L0 @ F.T)
-    item5 = gamma*np.trace(W.T @ Q @ W)
-    return item1 + item2 + item3 + item4 + item5
-
-
-def UpdateD(W):
-    p, m = W.shape
-    D = np.eye(p)
-    eps = 1e-50
-    for i in range(p):
-        ele = np.sqrt(np.sum(W[i,:]**2))
-        ele = max(ele, eps)
-        D[i,i] = 1/(2*ele)
-    return D
-
-
-def Solve(X, Y, L, L0, alpha, beta, gamma):
-    n, p = X.shape
-    m = Y.shape[1]
-    H = np.eye(n) - np.ones((n, 1)) @ np.ones((1,n))/n
-    W = np.random.normal(0, 1, (p,m))
-    it = 20
-    obj = np.zeros((it,))
-    for i in range(it):
-        A = (L + H +alpha*np.eye(n))
-        D = beta*L0
-        E = H @ X @ W + alpha*Y
-        F = linalg.solve_sylvester(A, D, E)
-        Q = UpdateD(W)
-        W = np.linalg.inv(X.T @ H @ X + gamma*Q) @ X.T @ H @ F
-        b = (np.ones((1,n)) @ F - np.ones((1,n)) @ X @ W)/n
-        obj[i] = Obj(X, Y, W, H, L, L0, F, Q, alpha, beta, gamma)
-    return W, b, obj
+    def loss(self, W, F, Q, alpha, beta, gamma):
+        item1 = np.trace(F.T @ self.L @ F)
+        item2 = np.sum((self.H @ self.x @ self.W - self.H @ F) ** 2)
+        item3 = alpha * np.sum((F - self.y) ** 2)
+        item4 = beta * np.trace(F @ self.L0 @ F.T)
+        item5 = gamma * np.trace(W.T @ Q @ W)
+        return item1 + item2 + item3 + item4 + item5

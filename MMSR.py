@@ -1,70 +1,88 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 
 
-def RandomWalk(A, step=100):
-    n = A.shape[0]
-    C = np.zeros_like(A)
-    nodes = np.arange(n)
-    for i in range(n):
-        if (A[i,:]==0).all():
-            A[i,:] = np.random.uniform(0, 1, (1,n))
+class RandomWalk(object):
+    def __init__(self, S, walk_length=50, method="dfs"):
+        self.S = S
+        self.n = S.shape[0]
+        self.walk_length = walk_length
+        self.method = method
 
-    for i in range(n):
-        prob = (A[i,:]/np.sum(A[i,:])).reshape(n,)
-        for _ in range(step):
-            index = np.random.choice(nodes, 1, p=prob)
-            C[i,index] = C[i,index] + 1
-            A_ind = A[index,:]
-            A_ind[0,index] = 0
-            prob = (A_ind/np.sum(A_ind)).reshape(n,)
-    return (C + C.T)/2
+    def trans_prob(self):
+        prob = np.zeros_like(self.S)
+        for i in range(self.n):
+            denominator = np.sum(self.S[i, :])
+            if denominator == 0:
+                prob[i, :] = np.ones((self.n, )) / self.n
+            else:
+                prob[i, :] = self.S[i, :] / denominator
+        return prob
 
-def Laplacian(A):
-    n = A.shape[0]
-    A = (A + A.T)/2
-    P = np.zeros_like(A)
-    for i in range(n):
-        P[i,i] = np.sum(A[i,:])
-    return P - A
+    def random_walk(self):
+        np.random.seed(20221028)
+        prob = self.trans_prob()
+        nodes = np.arange(self.n)
+        traces = np.zeros((self.n, self.n))
+        for i in range(self.n):
+            p = prob[i, :] / np.sum(prob[i, :])
+            if self.method == "dfs":
+                for _ in range(self.walk_length):
+                    index = np.random.choice(nodes, 1, p=p)
+                    traces[i, index] = traces[i, index] + 1
+                    p = prob[index, :]
+                    p[0, index] = 0
+                    p = (p / np.sum(p)).reshape(self.n, )
+            elif self.method == "bfs":
+                for _ in range(self.walkLength):
+                    index = np.random.choice(nodes, 1, p=p)
+                    traces[i, index] += 1
+        return (traces + traces.T) / 2
 
-def Solve(X, Y, L, D, V, H, alpha, beta, gamma):
-    n, p = X.shape
-    En = np.ones((n,1))
-    temp = X.T @ H @ X + alpha*X.T @ L @ X + beta*np.eye(p) + gamma*D
-    W = np.linalg.inv(temp) @ X.T @ H @ Y
-    b = (En.T @ V @ Y - En.T @ V @ X @ W)/n
-    
-    return W, b, V
 
-def Update(W):
-    p = W.shape[0]
-    D = np.eye(p)
-    eps = 1e-64
-    for i in range(p):
-        ele = np.sqrt(np.sum(W[i,:]**2) + eps)
-        D[i,i] = 1/(2*ele)
-    return D
+class MMSR(object):
+    def __init__(self, x, y, L, max_iter=50, eps=1e-64):
+        self.x = x
+        self.y = y
+        self.n = x.shape[0]
+        self.p = x.shape[1]
+        self.m = y.shape[1]
+        self.L = L
+        self. H = np.eye(self.n) - np.ones((self.n, 1)) @ np.ones((1, self.n)) / self.n
+        self.max_iter = max_iter
+        self.eps = eps
 
-def Obj(X, Y, W, b, V, H, L, D, alpha, beta, gamma):
-    n, p = X.shape
-    En = np.ones((n,1))
-    item1 = np.trace(W.T @ X.T @ V @ X @ W)
-    item2 = np.trace(b.T @ En.T @ V @ X @ W)
-    item3 = np.trace(Y.T @ V @ X @ W)
-    item4 = np.trace(b.T @ En.T @ V @ En @ b)
-    item5 = np.trace(Y.T @ V @ En @ b)
-    item6 = np.trace(Y.T @ V @ Y)
-    item7 = np.trace(W.T @ X.T @ L @ X @ W)
-    item8 = np.trace(W.T @ W)
-    item9 = np.trace(W.T @ D @ W)
-    return item1 / 2 + item2 - item3 / 2 + item4 / 2 - item5 + item6 / 2 + alpha * item7 / 2 + beta * item8 / 2 + gamma * item9 / 2
 
-def Iteration(X, Y, L, D, V, H, alpha, beta, gamma):
-    it = 30
-    obj = np.zeros((it,1))
-    for i in range(it):
-        W, b, V = Solve(X, Y, L, D, V, H, alpha, beta, gamma)
-        obj[i] = Obj(X, Y, W, b, V, H, L, D, alpha, beta, gamma)
-        D = Update(W)
-    return W, b, V, obj
+    def update_U(self, W, U):
+        for i in range(self.p):
+            denominator = np.sqrt(np.sum(W[i, :] ** 2))
+            U[i, i] = 1 / (2 * denominator + self.eps)
+        return U
+
+
+    def loss(self, W, b, U, alpha, beta, rho):
+        item1 = np.trace(W.T @ self.x.T @ self.x @ W) / 2
+        item2 = np.trace(b.T @ np.ones((1, self.n)) @ self.x @ W)
+        item3 = - np.trace(self.y.T @ self.x @ W)
+        item4 = np.trace(b.T @ np.ones((1,self.n)) @ np.ones((self.n ,1)) @ b) / 2
+        item5 = - np.trace(self.y.T @ np.ones((self.n, 1)) @ b)
+        item6 = np.trace(self.y.T @ self.y) / 2
+        item7 = alpha * np.trace(W.T @ self.x.T @ self.L @ self.x @ W) / 2
+        item8 = beta * rho * np.trace(W.T @ U @ W) / 2
+        item9 = beta * (1 - rho) * np.trace(W.T @ W) / 2
+        return item1 + item2 + item3 + item4 + item5 + item6 + item7 + item8 + item9
+
+
+    def mmsr(self, alpha, beta, rho):
+        np.random.seed(20221028)
+        U = np.diag(np.random.uniform(1, 100, self.p))
+        W = np.random.uniform(20, 100, (self.p, self.m))
+        b = np.zeros((1, self.m))
+        item1 = self.x.T @ (self.H + alpha * self.L) @ self.x
+        item2 = beta * (1 - rho) * np.eye(self.p)
+        for _ in range(self.max_iter):
+            item3 = beta * rho * U
+            item4 = self.x.T @ self.H @ self.y
+            W = np.linalg.inv(item1 + item2 + item3) @ item4
+            b = (np.ones((1, self.n)) @ self.y - np.ones((1, self.n)) @ self.x @ W) / self.n
+            U = self.update_U(W, U)
+        return W, b

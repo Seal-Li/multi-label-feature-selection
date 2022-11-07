@@ -1,18 +1,12 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
-"""
-示例：
-X = np.genfromtxt(filepath, delimiter=",", skip_header=1)
-X_st = PreProcess().Standardization(X)
-X_norm = PreProcess().Normalization(X)
-"""
 
-class PreProcess():
+class PreProcess(object):
     def __init__(self):
         return None
     
-    def Standardization(self, X):
+    def standardization(self, X):
         """
         数据标准化
         """
@@ -23,7 +17,7 @@ class PreProcess():
             X[:,i] = (X[:,i] - mean[i])/std[i]
         return X
     
-    def Normalization(self, X):
+    def normalization(self, X):
         """
         数据归一化
         """
@@ -52,7 +46,7 @@ class PreProcess():
         num = n - m
         return num/n
     
-    def MissingTreatment(self, X, Y):
+    def nonsense_treat(self, X, Y):
         n = X.shape[0]
         m = Y.shape[1]
         index = []
@@ -66,4 +60,3 @@ class PreProcess():
         X = np.delete(X, index, axis=0)
         Y = np.delete(Y, index, axis=0)
         return X, Y
-                
