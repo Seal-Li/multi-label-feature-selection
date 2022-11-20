@@ -34,7 +34,7 @@ class PreProcess(object):
         """
         n, m = Y.shape
         lab_num = np.sum(Y)
-        return lab_num/n
+        return round(lab_num / n, 4)
 
     def PMC(self, Y):
         """
@@ -44,7 +44,11 @@ class PreProcess(object):
         v = np.sum(Y, axis=1)
         m = np.sum(v==1)
         num = n - m
-        return num/n
+        return round(num / n, 4)
+    
+    def Dens(self, Y):
+        n, m = Y.shape
+        return round(np.sum(Y) / (n * m), 4)
     
     def nonsense_treat(self, X, Y):
         n = X.shape[0]

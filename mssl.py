@@ -2,7 +2,7 @@ import numpy as np
 
 
 class MSSL(object):
-    def __init__(self, x, y, L, maxIter=20, eps=1e-64):
+    def __init__(self, x, y, L, max_iter=20, eps=1e-64):
         self.x = x
         self.y = y
         self.L = L
@@ -11,13 +11,13 @@ class MSSL(object):
         self.m = y.shape[1]
         self.H = np.eye(x.shape[0]) - (np.ones((x.shape[0], 1)) @ np.ones((x.shape[0], 1)).T) / self.n
         self.eps = eps
-        self.maxIter = maxIter
+        self.max_iter = max_iter
 
     def mmsl(self, alpha, beta):
         En = np.ones((self.n, 1))
         D = np.eye(self.p)
         item1 = np.linalg.inv(D @ ((self.x.T @ self.H @ self.x) + alpha * self.L) + beta * np.eye(self.p))
-        for _ in range(self.maxIter):
+        for _ in range(self.max_iter):
             item2 = D @ self.x.T @ self.H @ self.y
             W = item1 @ item2
             b = (self.y.T @ En - W.T @ self.x.T @ En) / self.n

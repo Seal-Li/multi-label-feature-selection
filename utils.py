@@ -7,21 +7,39 @@ import pandas as pd
 
 def arg_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", 
-                        type=str, 
-                        default="your data folder")
-    parser.add_argument("--data_names", 
-                        type=list, 
-                        default=["Business", "Emotions", "Health", 
-                                 "Mediamill", "Scene", "Yeast"])
-    parser.add_argument("--data_dict", 
-                        type=dict,
-                        default={"Business": {"feature": 300, "label": 8},
-                                 "Emotions": {"feature": 72, "label": 6},
-                                 "Health": {"feature": 300, "label": 10}, 
-                                 "Mediamill": {"feature": 120, "label": 6},
-                                 "Scene": {"feature": 294, "label": 6}, 
-                                 "Yeast": {"feature": 103, "label": 14}})
+    parser.add_argument("--path", type=str, 
+                        default="C:/Users/lihai/Desktop/MLFS/data")
+    parser.add_argument("--save_path", type=str, 
+                        default="C:/Users/lihai/Desktop/MLFS/num_feature_result")
+    parser.add_argument("--data_names", type=list, 
+                        default=["emotions", "image", "scene", "yeast"])
+    parser.add_argument("--data_dict", type=dict,
+                        default={"emotions": {"feature": 72, "label": 6},
+                                 "image": {"feature": 294, "label": 5},
+                                 "scene": {"feature": 294, "label": 6}, 
+                                 "yeast": {"feature": 103, "label": 14}})
+    parser.add_argument("--parameter", type=dict,
+                        default={
+                            "emotions": {
+                                "alpha": [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2], 
+                                "beta": [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2], 
+                                "rho": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+                                "walk_length": 50},
+                            "image": {
+                                "alpha": [1e-4, 1e-3, 1e-2, 1e-1, 1], 
+                                "beta": [1, 1e1, 1e2], 
+                                "rho": [0.0, 0.3],
+                                "walk_length": 50},
+                            "scene": {
+                                "alpha": [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1], 
+                                "beta": [1, 1e1, 1e2], 
+                                "rho": [0.0, 0.3, 0.7, 0.8],
+                                "walk_length": 50},
+                            "yeast": {
+                                "alpha": [1e-3, 1e-2, 1e-1, 1], 
+                                "beta": [1, 1e1, 1e2, 1e3], 
+                                "rho": [0.0, 0.6, 0.8],
+                                "walk_length": 50}})
     return parser.parse_args()
 
 
@@ -47,9 +65,23 @@ def laplacian(A):
     return P - A
 
 
+def feature_selection(W, num_fea):
+    feature_score = np.sqrt(np.sum(W ** 2, axis=1))
+    return np.argsort(feature_score)[-num_fea:]
+
+
+def predict(W, b, num_fea, x_test):
+    n, _ = x_test.shape
+    feature_score = np.sqrt(np.sum(W ** 2, axis=1))
+    features = np.argsort(feature_score)[-num_fea:]
+    W = W[features, :]
+    x_test = x_test[:, features]
+    results = x_test @ W + np.ones((n, 1)) @ b
+    return 1 / (1 + np.exp(0.5 - results))
+
+
 def evaluate(y_true, y_pre):
-    pre_labels = y_pre >= 0.5
-    MLM = measures.MultiLabelMetrics(y_true, pre_labels)
+    MLM = measures.MultiLabelMetrics(y_true, y_pre)
     RM = measures.RankingMetrics(y_true, y_pre)
     HL = round(MLM.hamming_loss(), 4)
     RL = round(RM.ranking_loss(), 4)

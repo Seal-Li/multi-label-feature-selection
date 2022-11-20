@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
+
 class SingleLabelMetrics(object):
     """
     This class deal with binary classification problems only.
@@ -44,8 +45,9 @@ class SingleLabelMetrics(object):
         return self.Accuracy
     
     def precision(self):
+        eps = 1e-64
         self.TP, self.FP, self.FN, self.TN = self.confusion_matrix()
-        self.Precision = self.TP / (self.TP + self.FP)
+        self.Precision = self.TP / (self.TP + self.FP + eps)
         return self.Precision
     
     def recall(self):
@@ -142,6 +144,7 @@ class MultiLabelMetrics(object):
         self.MacroF1 = 0
         self.MicroF1 = 0
         self.WeightF1 = 0
+        self.MacroAUC = 0
     
     def hamming_loss(self):
         miss_pairs = np.sum(self.pred != self.truth)

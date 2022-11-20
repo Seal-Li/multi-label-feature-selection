@@ -1,14 +1,15 @@
 import numpy as np
 from numpy.linalg import inv
 
+
 class RFS(object):
-    def __init__(self, x, y, maxIter=50, eps=1e-20):
+    def __init__(self, x, y, max_iter=50, eps=1e-20):
         self.x = x.T
         self.y = y
         self.n = x.shape[0]
         self.p = x.shape[1]
         self.m = y.shape[1]
-        self.maxIter = maxIter
+        self.max_iter = max_iter
         self.eps = eps
 
     def update(self, U):
@@ -23,7 +24,7 @@ class RFS(object):
         A = np.concatenate((self.x.T, gamma * I), axis=1)
         D = np.eye(self.n + self.p)
         U = np.ones((self.n + self.p, self.m))
-        for i in range(self.maxIter):
+        for _ in range(self.max_iter):
             U = inv(D) @ A.T @ inv(A @ inv(D) @ A.T) @ self.y
             D = self.update(U)
-        return U[:self.p, :]
+        return U[:self.p-1, :]

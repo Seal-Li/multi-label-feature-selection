@@ -4,7 +4,7 @@ import numpy as np
 class MIFS(object):
     def __init__(self, x, y, L, 
                  lr_V=1e-10, lr_B=1e-10, lr_W=1e-10, 
-                 maxIter=100, eps=1e-64):
+                 max_iter=1000, eps=1e-64):
         self.x = x
         self.y = y
         self.L = L
@@ -14,7 +14,7 @@ class MIFS(object):
         self.lr_V = lr_V
         self.lr_B = lr_B
         self.lr_W = lr_W
-        self.maxIter = maxIter
+        self.max_iter = max_iter
         self.eps = eps
 
     def update(self, W, D, V, B, dw, dv, db):
@@ -39,7 +39,7 @@ class MIFS(object):
         V = np.random.randint(0, 2, (self.n, self.m))
         B = np.eye(self.m)
         D = np.eye(self.p)
-        for _ in range(self.maxIter):
+        for _ in range(self.max_iter):
             dw, dv, db = self.derives(W, D, V, B, alpha, beta, gamma)
             W, D, V, B = self.update(W, D, V, B, dw, dv, db)
         return W, B
