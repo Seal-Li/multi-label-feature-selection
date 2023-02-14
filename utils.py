@@ -70,16 +70,6 @@ def feature_selection(W, num_fea):
     return np.argsort(feature_score)[-num_fea:]
 
 
-def predict(W, b, num_fea, x_test):
-    n, _ = x_test.shape
-    feature_score = np.sqrt(np.sum(W ** 2, axis=1))
-    features = np.argsort(feature_score)[-num_fea:]
-    W = W[features, :]
-    x_test = x_test[:, features]
-    results = x_test @ W + np.ones((n, 1)) @ b
-    return 1 / (1 + np.exp(0.5 - results))
-
-
 def evaluate(y_true, y_pre):
     MLM = measures.MultiLabelMetrics(y_true, y_pre)
     RM = measures.RankingMetrics(y_true, y_pre)
